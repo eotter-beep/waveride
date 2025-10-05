@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Modernized Waf bootstrapper
+
+Automatically unpacks waflib if missing and installs dependencies.
+"""
+
+import os
+import sys
+import tarfile
+import shutil
+import subprocess
+from pathlib import Path
+import inspect
+
+VERSION = "2.0.26"
+REVISION = "44bc421a5f6bb452d70d83cbd5abc3fa"
+WAF_NAME = "waf"
+CWD = Path.cwd()
+
+def ensure_tools():
+    """Ensure core Python modules and tools are installed."""
+    required_tools = ["tar", "bzip2"]
+    for tool in required_tools:
+        if shutil.which(tool) is None:
+            print(f"Installing missing tool: {tool}")
+            try:
+                subprocess.check_call(["sudo", "pacman", "-Sy", "--noconfirm", tool])
+            except Exception:
+                print(f"⚠️ Could not auto-install {tool}. Please install it manually.")
+                sys.exit(1)
+
+def error(msg):
+    print(f"\033[91mError: {msg}\033[0m")
+    sys.exit(1)
+
+def unpack_wafdir(dest_dir, src_file):
+    """Extract waflib from waf-light archive."""
+    print(f"Unpacking waflib to {dest_dir}...")
+    try:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        tmp_file = dest_dir / "waflib.tar.bz2"
+
+        # Read embedded archive
+        with open(src_file, "rb") as f:
+            content = f.read().split(b"#==>\n", 1)[-1]
+            payload = content.split(b"#<==\n")[0].strip()[1:-1]
+            payload = payload.replace(b"#/", b"\n").replace(b"#+", b"\r").replace(b"#&", b"\x00")
+
+        tmp_file.write_bytes(payload)
+
+        with tarfile.open(tmp_file) as tar:
+            tar.extractall(path=dest_dir)
+
+        tmp_file.unlink(missing_ok=True)
+        print(f"✅ Waflib unpacked successfully into {dest_dir}")
+
+    except Exception as e:
+        error(f"Failed to unpack waflib: {e}")
+
+def find_or_unpack_waflib():
+    """Find waflib or unpack it if missing."""
+    src = Path(inspect.getfile(inspect.getmodule(error))).resolve()
+    base = src.parent
+    lib_dir = base / f"{WAF_NAME}-{VERSION}-{REVISION}" / "waflib"
+
+    if lib_dir.exists():
+        print(f"Using existing waflib at {lib_dir}")
+        return lib_dir.parent
+
+    unpack_dir = base / f"{WAF_NAME}-{VERSION}-{REVISION}"
+    unpack_wafdir(unpack_dir, src)
+    return unpack_dir
+
+def main():
+    ensure_tools()
+    wafdir = find_or_unpack_waflib()
+    sys.path.insert(0, str(wafdir))
+
+    try:
+        from waflib import Scripting
+        Scripting.waf_entry_point(str(CWD), VERSION, str(wafdir))
+    except ImportError:
+        error("Failed to import waflib. Ensure waflib was unpacked correctly.")
+
+if __name__ == "__main__":
+    main()
