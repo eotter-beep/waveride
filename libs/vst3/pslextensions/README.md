@@ -1,6 +1,10 @@
+WaveRide Credits
+---------------------------------------------------------
 PreSonus Plug-In Extensions
 ---------------------------
 
 https://www.presonussoftware.com/en_US/developer
+
 https://www.presonussoftware.com/developer/pslextensions.zip
-downloaded 2020-10-05
+
+downloaded 2020-10-05 (Ardour release)
