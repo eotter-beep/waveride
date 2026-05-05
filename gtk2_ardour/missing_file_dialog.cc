@@ -41,18 +41,18 @@ MissingFileDialog::MissingFileDialog (Gtk::Window& parent, Session* s, const std
 	, filetype (type)
 	, is_absolute_path (Glib::path_is_absolute (path))
 	, chooser (_("Select a folder to search"), FILE_CHOOSER_ACTION_SELECT_FOLDER)
-	, use_chosen (_("Add chosen folder to search path, and try again"))
+	, use_chosen (_("Recommended: Search selected folder now (remember it for future projects)"))
 	, choice_group (use_chosen.get_group())
-	, stop_loading_button (choice_group, _("Stop loading this session"), false)
-	, all_missing_ok (choice_group, _("Skip all missing files"), false)
-	, this_missing_ok (choice_group, _("Skip this file"), false)
+	, stop_loading_button (choice_group, _("Stop loading this session now"), false)
+	, all_missing_ok (choice_group, _("Fast load: Skip all missing files and continue"), false)
+	, this_missing_ok (choice_group, _("Skip this one file and continue"), false)
 {
 	/* This dialog is always shown programmatically. Center the window.*/
 	set_position (Gtk::WIN_POS_CENTER);
 
 	set_session (s);
 
-	add_button (_("Done"), RESPONSE_OK);
+	add_button (_("Continue"), RESPONSE_OK);
 	set_default_response (RESPONSE_OK);
 
 	string typestr;
@@ -76,7 +76,7 @@ MissingFileDialog::MissingFileDialog (Gtk::Window& parent, Session* s, const std
 	}
 
 	msg.set_justify (JUSTIFY_LEFT);
-	msg.set_markup (string_compose (_("%1 cannot find the %2 file\n\n<i>%3</i>\n\nin any of these folders:\n\n\
+	msg.set_markup (string_compose (_("<b>File needs attention</b>\n\n%1 cannot find this %2 file:\n\n<i>%3</i>\n\nSearched in:\n\n\
 					<tt>%4</tt>\n\n"), PROGRAM_NAME, typestr, Gtkmm2ext::markup_escape_text (path), Gtkmm2ext::markup_escape_text (oss.str())));
 
 	HBox* hbox = manage (new HBox);
@@ -90,6 +90,7 @@ MissingFileDialog::MissingFileDialog (Gtk::Window& parent, Session* s, const std
 	button_packer_box->set_spacing (6);
 	button_packer_box->set_border_width (12);
 
+	button_packer_box->pack_start (*manage (new Label (_("Choose one simple action:"))), false, false);
 	button_packer_box->pack_start (use_chosen, false, false);
 	button_packer_box->pack_start (this_missing_ok, false, false);
 	button_packer_box->pack_start (all_missing_ok, false, false);
@@ -110,7 +111,7 @@ MissingFileDialog::MissingFileDialog (Gtk::Window& parent, Session* s, const std
 
 	hbox = manage (new HBox);
 	Label* label = manage (new Label);
-	label->set_text (_("Click to choose an additional folder"));
+	label->set_text (_("Choose another folder to search"));
 
 	hbox->set_spacing (6);
 	hbox->set_border_width (12);

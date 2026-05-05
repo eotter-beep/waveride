@@ -34,7 +34,7 @@ AmbiguousFileDialog::AmbiguousFileDialog (const string& file, const vector<strin
 
 	get_vbox()->set_spacing (6);
 	Label* l = manage (new Label);
-	l->set_markup (string_compose (_("%1 has found the file <i>%2</i> in the following places:\n\n"), PROGRAM_NAME, file));
+	l->set_markup (string_compose (_("<b>Choose a file to continue</b>\n\n%1 found more than one copy of <i>%2</i>.\nSelect one path below:\n\n"), PROGRAM_NAME, file));
 	get_vbox()->pack_start (*l);
 
 	for (vector<string>::const_iterator i = paths.begin(); i != paths.end(); ++i) {
@@ -43,9 +43,9 @@ AmbiguousFileDialog::AmbiguousFileDialog (const string& file, const vector<strin
 		_radio_buttons.back()->signal_button_press_event().connect (sigc::mem_fun (*this, &AmbiguousFileDialog::rb_button_press), false);
 	}
 
-	get_vbox()->pack_start (*manage (new Label (_("\n\nPlease select the path that you want to get the file from."))));
+	get_vbox()->pack_start (*manage (new Label (_("\nTip: Double-click a path for quick select, then Continue."))));
 
-	add_button (_("Done"), RESPONSE_OK);
+	add_button (_("Continue"), RESPONSE_OK);
 	set_default_response (RESPONSE_OK);
 
 	show_all ();
