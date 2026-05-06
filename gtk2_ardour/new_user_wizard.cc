@@ -78,6 +78,9 @@ NewUserWizard::NewUserWizard ()
 	: _splash_pushed (false)
 	, config_modified (false)
 	, default_dir_chooser (0)
+	, use_music_dir_button (_("Use Music folder"))
+	, easy_timeline_mode (_("Use easier timeline defaults (strong grid snap + ruler)"))
+	, easy_midi_mode (_("Enable easier MIDI defaults (computer keyboard + selected track input)"))
 {
 	set_position (WIN_POS_CENTER);
 	set_border_width (12);
@@ -196,6 +199,13 @@ using the program.</span> \
 	ui_font_scale.signal_changed ().connect (sigc::mem_fun (*this, &NewUserWizard::rescale_ui));
 #endif
 
+	easy_timeline_mode.set_active (true);
+	easy_midi_mode.set_active (true);
+	vbox->pack_start (easy_timeline_mode, false, false, 6);
+	vbox->pack_start (easy_midi_mode, false, false, 0);
+	easy_timeline_mode.show ();
+	easy_midi_mode.show ();
+
 	foomatic->show ();
 	vbox->show ();
 
@@ -228,12 +238,22 @@ NewUserWizard::default_dir_changed ()
 }
 
 void
+NewUserWizard::use_music_dir ()
+{
+	std::string music_dir = Glib::build_filename (Glib::get_home_dir (), "Music", PROGRAM_NAME " Sessions");
+	g_mkdir_with_parents (music_dir.c_str (), 0755);
+	default_dir_chooser->set_current_folder (music_dir);
+	default_dir_changed ();
+}
+
+void
 NewUserWizard::setup_first_time_config_page ()
 {
 	default_dir_chooser = manage (new FileChooserButton (string_compose (_("Default folder for %1 sessions"), PROGRAM_NAME),
 							     FILE_CHOOSER_ACTION_SELECT_FOLDER));
 	Gtk::Label* txt = manage (new Label);
 	HBox* hbox = manage (new HBox);
+	HBox* quick_hbox = manage (new HBox);
 	VBox* vbox = manage (new VBox);
 
 	txt->set_markup (string_compose (_("<span size=\"larger\">\
@@ -249,14 +269,18 @@ Where would you like new %1 sessions to be stored by default?\n\n\
 	vbox->set_border_width (24);
 
 	hbox->pack_start (*default_dir_chooser, false, true, 8);
+	quick_hbox->pack_start (use_music_dir_button, false, false, 8);
 	vbox->pack_start (*txt, false, false);
 	vbox->pack_start (*hbox, false, true);
+	vbox->pack_start (*quick_hbox, false, true);
 
 	cerr << "set default folder to " << poor_mans_glob (Config->get_default_session_parent_dir()) << endl;
 	Gtkmm2ext::add_volume_shortcuts (*default_dir_chooser);
 	default_dir_chooser->set_current_folder (poor_mans_glob (Config->get_default_session_parent_dir()));
 	default_dir_chooser->signal_current_folder_changed().connect (sigc::mem_fun (*this, &NewUserWizard::default_dir_changed));
+	use_music_dir_button.signal_clicked ().connect (sigc::mem_fun (*this, &NewUserWizard::use_music_dir));
 	default_dir_chooser->show ();
+	use_music_dir_button.show ();
 
 	vbox->show_all ();
 
@@ -320,6 +344,24 @@ NewUserWizard::on_apply ()
 		}
 
 		Config->save_state ();
+	}
+
+	if (easy_timeline_mode.get_active ()) {
+		UIConfiguration::instance ().set_snap_target (ARDOUR::SnapTargetGrid);
+		UIConfiguration::instance ().set_show_grids_ruler (true);
+		UIConfiguration::instance ().set_rubberbanding_snaps_to_grid (true);
+		UIConfiguration::instance ().set_use_mouse_position_as_zoom_focus_on_scroll (true);
+		UIConfiguration::instance ().set_use_double_click_to_zoom_to_selection (true);
+		UIConfiguration::instance ().set_show_snapped_cursor (true);
+		UIConfiguration::instance ().set_snap_threshold (32);
+	}
+
+	if (easy_midi_mode.get_active ()) {
+		UIConfiguration::instance ().set_vkeybd_layout ("QWERTY Single");
+		UIConfiguration::instance ().set_use_note_bars_for_velocity (true);
+		UIConfiguration::instance ().set_use_note_color_for_velocity (false);
+		UIConfiguration::instance ().set_sound_midi_notes (true);
+		Config->set_midi_input_follows_selection (true);
 	}
 
 	{

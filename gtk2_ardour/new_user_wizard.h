@@ -31,6 +31,8 @@
 #include <ytkmm/radiobutton.h>
 #include <ytkmm/filechooserbutton.h>
 #include <ytkmm/comboboxtext.h>
+#include <ytkmm/button.h>
+#include <ytkmm/checkbutton.h>
 
 #include "ardour/utils.h"
 
@@ -76,11 +78,15 @@ private:
 
 	/* Welcome */
 	Gtk::ComboBoxText ui_font_scale;
+	Gtk::CheckButton easy_timeline_mode;
+	Gtk::CheckButton easy_midi_mode;
 	void rescale_ui ();
 
 	/* first page */
 	Gtk::FileChooserButton* default_dir_chooser;
+	Gtk::Button use_music_dir_button;
 	void default_dir_changed();
+	void use_music_dir ();
 	void setup_first_page ();
 	Gtk::FileChooserButton new_folder_chooser;
 
